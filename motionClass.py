@@ -2,12 +2,15 @@ from imutils.video import VideoStream
 from imutils import face_utils
 import imutils
 import cv2
+import time
 
 class MotionDetector():
-    
+
     def __init__(self):
+        print ("Initializing...")
         self.pxCheck = 20 # larger number = less pixels to check each frame
-        self.vs = VideoStream(src=0).start() # using webcam for testing, will change to RPi
+        self.vs = VideoStream(usePiCamera=True).start() # using webcam for testing, will change to RPi
+        time.sleep(2.0)
         self.height, self.width = self.vs.read().shape[:2] # won't be correct if frame is resized later
         self.numPixels = (self.width * self.height) / self.pxCheck # number of pixels to check
         self.prevColorTotals = [] # BGR
@@ -28,7 +31,7 @@ class MotionDetector():
         #print frame[0][0]
     
         #print checkGrayscale(frame)
-            print self.motionToPWM(self.checkGrayscale(frame))
+            print (self.motionToPWM(self.checkGrayscale(frame)))
 
     def stop(self):
         self.running = False
