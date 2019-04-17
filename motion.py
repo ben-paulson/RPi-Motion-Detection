@@ -2,8 +2,9 @@ from imutils.video import VideoStream
 from imutils import face_utils
 import imutils
 import cv2
+#import RPi.GPIO as GPIO
 
-pxCheck = 100000000 # larger number = less pixels to check each frame
+pxCheck = 20 # larger number = less pixels to check each frame
 vs = VideoStream(src=0).start() # using webcam for testing, will change to RPi
 height, width = vs.read().shape[:2] # won't be correct if frame is resized later
 numPixels = (height * width) / pxCheck # number of pixels to check
@@ -11,8 +12,15 @@ prevColorTotals = [] # BGR
 prevColor = []
 pixDiff = [0, 0, 0] # BGR
 colorMax = numPixels * 255.0
+outputPin = 12
+outFreq = 100
+duty = 50
+motionMAX = 0.05
 
-previous = None
+##GPIO.setmode(GPIO.BOARD)
+##GPIO.setup(outputPin, GPIO.OUT)
+##p = GPIO.PWM(outputPin, outFreq)
+##p.start(duty)
 
 def checkGrayscale(f):
     f = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
@@ -33,7 +41,7 @@ def checkGrayscale(f):
         prevColor.append(colorTotal)
 
     #print colorTotal
-    cv2.imshow("Frame", f)
+    #cv2.imshow("Frame", f)
 
     return movement
 
@@ -70,6 +78,13 @@ def checkBGR(f):
     
     return movement
 
+def motionToPWM(motion):
+    if motion > motionMAX:
+        motion = motionMAX
+
+    duty = (motion / motionMAX) * 100.0
+    return duty
+
 while True:
  
     frame = vs.read()
@@ -77,9 +92,8 @@ while True:
     #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     #print frame[0][0]
     
-    print checkGrayscale(frame)
-    
-    
+    #print checkGrayscale(frame)
+    print motionToPWM(checkGrayscale(frame))
     
     key = cv2.waitKey(1) & 0xFF
  
@@ -90,5 +104,7 @@ while True:
 
  
 # cleanup
+#p.stop()
+#GPIO.cleanup()
 cv2.destroyAllWindows()
 vs.stop()
