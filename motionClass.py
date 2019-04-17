@@ -3,6 +3,7 @@ from imutils import face_utils
 import imutils
 import cv2
 import time
+import RPi.GPIO as GPIO
 
 class MotionDetector():
 
@@ -22,6 +23,10 @@ class MotionDetector():
         self.duty = 50
         self.motionMax = 0.05
         self.running = True
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.outputPin, GPIO.OUT)
+        self.p = GPIO.PWM(self.outputPin, self.outFreq)
+        self.p.start(self.duty)
 
     def run(self):
         if self.running:
@@ -31,7 +36,9 @@ class MotionDetector():
         #print frame[0][0]
     
         #print checkGrayscale(frame)
-            print (self.motionToPWM(self.checkGrayscale(frame)))
+        self.duty = self.motionToPWM(self.checkGrayscale(frame))
+        print (self.duty)
+        self.p.ChangeDutyCycle(self.duty)
 
     def stop(self):
         self.running = False
@@ -103,6 +110,8 @@ class MotionDetector():
     def cleanup(self):
         cv2.destroyAllWindows()
         self.vs.stop()
+        self.p.stop()
+        GPIO.cleanup()
 
 detector = MotionDetector()
 
