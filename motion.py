@@ -7,6 +7,7 @@ import RPi.GPIO as GPIO
 import math
 from threading import Thread
 import spidev
+import subprocess
 
 class MotionDetector():
 
@@ -35,6 +36,10 @@ class MotionDetector():
         self.p.start(self.duty)
         self.p2 = GPIO.PWM(self.outputPin2, self.outFreq)
         self.p2.start(self.duty)
+
+        GPIO.setup(11, GPIO.OUT)
+        GPIO.setup(13, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        GPIO.setup(15, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
         self.just_swept = False
         self.spi = spidev.SpiDev()
@@ -67,6 +72,7 @@ class MotionDetector():
         self.sweeping = False
 
     def run(self):
+        GPIO.output(11, GPIO.HIGH)
         if self.running:
             frame = self.vs.read()
         #frame = imutils.resize(frame, width=450)
@@ -221,12 +227,19 @@ class Sweeper(Thread):
 
 
 detector = MotionDetector()
+shutdown = False
 
 while True:
     detector.run()
     # if the `q` key was pressed, break from the loop
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+    if cv2.waitKey(1) & 0xFF == ord("q") or GPIO.input(13):
+        detector.stop()
+        break
+    if GPIO.input(15):
+        shutdown = True
         detector.stop()
         break
 
 detector.cleanup()
+if shutdown:
+    subprocess.call(["sudo", "shutdown", "-h", "now"])
